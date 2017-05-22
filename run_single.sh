@@ -1,6 +1,5 @@
 #! /bin/bash
 
-# parameter option
 if [ "$1" == "" ] || [ "$#" -gt "1" ] || [ ! -e $1 ]
 then
         echo "not exist python file or more than one file"
@@ -8,17 +7,16 @@ then
         exit
 fi
 
-source error.dat
+source /home/kdwhan27/iw_shell/python/error.dat
 
 mkdir -p result
 
-#result file path 
 FILE=result/temp`basename $1 .py`.txt
 FILE2=result/temp`basename $1 .py`2.txt
 FILE3=`basename $1 .py`.json
 
-pycodestyle $1 --format='%(code)s %(row)d %(col)d' > $FILE
-pylint --msg-template='{msg_id} {line:3d} {column}' --reports=n $1 >> $FILE
+sudo pycodestyle $1 --format='%(code)s %(row)d %(col)d' > $FILE
+sudo pylint --msg-template='{msg_id} {line:3d} {column}' --reports=n $1 >> $FILE
 pymetrics -z $1 > $FILE2
 
 IndenCount=0 NamingCount=0 CommentCount=0 WhiteSpaceCount=0 CodeFormatCount=0 StatementCount=0 FunctionCount=0 ClassCount=0 ModuleCount=0
@@ -158,12 +156,13 @@ do
 done<$FILE
 
 echo "{" >> $FILE3
+echo "\"_id"\":"\"`basename $1 .py`\"" ',' >> $FILE3;
 r='^[0-9]+$'
 while read count category
 do
         if [[ "$count" =~ $r ]];
         then
-                echo "\""$category "\":" $count ',' >> $FILE3;
+                echo "\""$category"\":" $count ',' >> $FILE3;
         fi
 done<$FILE2
 
@@ -178,7 +177,7 @@ then
 	temp1[$IndenCount-1]=$temp
 	temp=''
 fi
-if [[ "$Namingcount" != "0" ]];
+if [[ "$NamingCount" != "0" ]];
 then
 	temp=`echo ${temp2[$NamingCount-1]} | cut -d',' -f1`','`echo ${temp2[$NamingCount-1]} | cut -d',' -f2`','`echo ${temp2[$NamingCount-1]} | cut -d',' -f3`
 	temp2[$NamingCount-1]=$temp
@@ -190,7 +189,7 @@ then
 	temp3[$CommentCount-1]=$temp
 	temp=''
 fi
-if [[ "$WhitSpaceCount" != "0" ]];
+if [[ "$WhiteSpaceCount" != "0" ]];
 then
 	temp=`echo ${temp4[$WhiteSpaceCount-1]} | cut -d',' -f1`','`echo ${temp4[$WhiteSpaceCount-1]} | cut -d',' -f2`','`echo ${temp4[$WhiteSpaceCount-1]} | cut -d',' -f3`
 	temp4[$WhiteSpaceCount-1]=$temp
@@ -220,7 +219,7 @@ then
 	temp8[$ClassCount-1]=$temp
 	temp=''
 fi
-if [[ "$Modulecount" != "0" ]];
+if [[ "$ModuleCount" != "0" ]];
 then
 	temp=`echo ${temp9[$ModuleCount-1]} | cut -d',' -f1`','`echo ${temp9[$ModuleCount-1]} | cut -d',' -f2`','`echo ${temp9[$ModuleCount-1]} | cut -d',' -f3`
 	temp9[$ModuleCount-1]=$temp
@@ -248,7 +247,7 @@ echo -e "\t\t\"error\":[\n${temp9[@]}]}" >> $FILE3
 echo "}" >> $FILE3
 
 #import json to db
-#mongoimport --db test --collection docs --file $FILE3
-#rm $FILE3
+mongoimport --db test --collection docs --file $FILE3
+rm $FILE3
 
 rm metricData.*
